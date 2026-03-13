@@ -126,7 +126,7 @@ function CarouselView({ photocards, getTitle, getPrice }: {
     return () => window.removeEventListener('keydown', h)
   }, [goLeft, goRight])
 
-  const swipe = useSwipe(goRight, goLeft)
+  const swipe = useSwipe(goLeft, goRight)
 
   if (n === 0) return null
 
@@ -265,7 +265,7 @@ function FlatCarouselView({ photocards, getTitle, getPrice }: {
     return () => window.removeEventListener('keydown', h)
   }, [goLeft, goRight])
 
-  const swipe = useSwipe(goRight, goLeft)
+  const swipe = useSwipe(goLeft, goRight)
 
   if (n === 0) return null
 
@@ -494,20 +494,30 @@ export default function PhotocardGallery() {
 
   const displayed = isShuffled ? shuffledPhotocards : photocards
 
-  const toggleShuffle = () => {
+  const toggleShuffle = async () => {
     if (isShuffled) {
       setIsShuffled(false)
       lsSet('pc_shuffle', '0')
       return
     }
-    const arr = [...photocards]
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[arr[i], arr[j]] = [arr[j], arr[i]]
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({ page: '1', limit: '1000' })
+      if (selectedSinger)         { params.set('search', selectedSinger);    params.set('searchType', 'singer') }
+      else if (selectedGroupName) { params.set('search', selectedGroupName); params.set('searchType', 'group') }
+      const res = await fetch(`/api/photocards?${params.toString()}`)
+      const data = await res.json()
+      const arr: Photocard[] = data.data ?? []
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[arr[i], arr[j]] = [arr[j], arr[i]]
+      }
+      setShuffledPhotocards(arr)
+      setIsShuffled(true)
+      lsSet('pc_shuffle', '1')
+    } finally {
+      setLoading(false)
     }
-    setShuffledPhotocards(arr)
-    setIsShuffled(true)
-    lsSet('pc_shuffle', '1')
   }
 
   const openSlider  = (i: number) => { setSliderIndex(i); setSliderOpen(true) }
