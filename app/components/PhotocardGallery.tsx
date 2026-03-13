@@ -66,6 +66,13 @@ function wrappedOffset(cardIdx: number, centerIdx: number, n: number) {
 
 const TIMER_OPTIONS = [1, 2, 3, 5, 10] // seconds
 
+function lsGet(key: string): string | null {
+  return typeof window !== 'undefined' ? localStorage.getItem(key) : null
+}
+function lsSet(key: string, value: string) {
+  if (typeof window !== 'undefined') localStorage.setItem(key, value)
+}
+
 function useAutoPlay(goRight: () => void, interval: number, playing: boolean) {
   useEffect(() => {
     if (!playing) return
@@ -83,10 +90,10 @@ function CarouselView({ photocards, getTitle, getPrice }: {
 }) {
   const [index, setIndex] = useState(0)
   const [containerH, setContainerH] = useState(400)
-  const [playing, setPlaying] = useState(() => localStorage.getItem('pc_playing') === '1')
-  const togglePlay = () => setPlaying(p => { const next = !p; localStorage.setItem('pc_playing', next ? '1' : '0'); return next })
-  const [timerSec, setTimerSec] = useState(() => Number(localStorage.getItem('pc_timer') || '3'))
-  const setTimer = (s: number) => { setTimerSec(s); localStorage.setItem('pc_timer', String(s)) }
+  const [playing, setPlaying] = useState(() => lsGet('pc_playing') === '1')
+  const togglePlay = () => setPlaying(p => { const next = !p; lsSet('pc_playing', next ? '1' : '0'); return next })
+  const [timerSec, setTimerSec] = useState(() => Number(lsGet('pc_timer') || '3'))
+  const setTimer = (s: number) => { setTimerSec(s); lsSet('pc_timer', String(s)) }
   const containerRef = useRef<HTMLDivElement>(null)
   const n = photocards.length
 
@@ -222,10 +229,10 @@ function FlatCarouselView({ photocards, getTitle, getPrice }: {
 }) {
   const [index, setIndex] = useState(0)
   const [containerH, setContainerH] = useState(400)
-  const [playing, setPlaying] = useState(() => localStorage.getItem('pc_playing') === '1')
-  const togglePlay = () => setPlaying(p => { const next = !p; localStorage.setItem('pc_playing', next ? '1' : '0'); return next })
-  const [timerSec, setTimerSec] = useState(() => Number(localStorage.getItem('pc_timer') || '3'))
-  const setTimer = (s: number) => { setTimerSec(s); localStorage.setItem('pc_timer', String(s)) }
+  const [playing, setPlaying] = useState(() => lsGet('pc_playing') === '1')
+  const togglePlay = () => setPlaying(p => { const next = !p; lsSet('pc_playing', next ? '1' : '0'); return next })
+  const [timerSec, setTimerSec] = useState(() => Number(lsGet('pc_timer') || '3'))
+  const setTimer = (s: number) => { setTimerSec(s); lsSet('pc_timer', String(s)) }
   const containerRef = useRef<HTMLDivElement>(null)
   const n = photocards.length
 
@@ -410,8 +417,8 @@ export default function PhotocardGallery() {
   const [shuffledPhotocards, setShuffledPhotocards] = useState<Photocard[]>([])
   const [isShuffled, setIsShuffled] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [viewMode, setViewMode] = useState<ViewMode>(() => (localStorage.getItem('pc_view') as ViewMode) || 'grid')
-  const setView = (m: ViewMode) => { setViewMode(m); localStorage.setItem('pc_view', m) }
+  const [viewMode, setViewMode] = useState<ViewMode>(() => (lsGet('pc_view') as ViewMode) || 'grid')
+  const setView = (m: ViewMode) => { setViewMode(m); lsSet('pc_view', m) }
 
   const [selectedGroupId, setSelectedGroupId] = useState('')
   const [selectedGroupName, setSelectedGroupName] = useState('')
@@ -465,7 +472,7 @@ export default function PhotocardGallery() {
   // auto-shuffle on initial load if preference was stored
   const initShuffleDone = useRef(false)
   useEffect(() => {
-    if (initShuffleDone.current || total === 0 || localStorage.getItem('pc_shuffle') !== '1') return
+    if (initShuffleDone.current || total === 0 || lsGet('pc_shuffle') !== '1') return
     initShuffleDone.current = true
     toggleShuffle()
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -490,7 +497,7 @@ export default function PhotocardGallery() {
   const toggleShuffle = () => {
     if (isShuffled) {
       setIsShuffled(false)
-      localStorage.setItem('pc_shuffle', '0')
+      lsSet('pc_shuffle', '0')
       return
     }
     const arr = [...photocards]
@@ -500,7 +507,7 @@ export default function PhotocardGallery() {
     }
     setShuffledPhotocards(arr)
     setIsShuffled(true)
-    localStorage.setItem('pc_shuffle', '1')
+    lsSet('pc_shuffle', '1')
   }
 
   const openSlider  = (i: number) => { setSliderIndex(i); setSliderOpen(true) }
