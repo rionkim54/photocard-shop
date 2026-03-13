@@ -28,7 +28,7 @@ export async function GET(
     const imageBuffer = await imageRes.arrayBuffer()
     const watermarked = await applyWatermark(imageBuffer, WATERMARK_TEXT, 0.3)
 
-    return new NextResponse(watermarked, {
+    return new NextResponse(new Uint8Array(watermarked), {
       headers: {
         'Content-Type': 'image/jpeg',
         'Cache-Control': 'public, max-age=86400',
