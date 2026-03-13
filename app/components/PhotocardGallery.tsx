@@ -34,6 +34,62 @@ interface Singer {
 
 type ViewMode = 'grid' | 'carousel' | 'flat' | 'collage'
 
+const DEFAULT_SKY_COLOR = '#66bfff'
+
+function hexToRgb(hex: string) {
+  const normalized = hex.replace('#', '')
+  const safe = normalized.length === 3
+    ? normalized.split('').map(ch => ch + ch).join('')
+    : normalized.padEnd(6, '0').slice(0, 6)
+  const value = Number.parseInt(safe, 16)
+
+  return {
+    r: (value >> 16) & 255,
+    g: (value >> 8) & 255,
+    b: value & 255,
+  }
+}
+
+function rgbToHex(r: number, g: number, b: number) {
+  const toHex = (value: number) => Math.max(0, Math.min(255, Math.round(value))).toString(16).padStart(2, '0')
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+}
+
+function mixHex(color: string, target: string, ratio: number) {
+  const fromRgb = hexToRgb(color)
+  const toRgb = hexToRgb(target)
+
+  return rgbToHex(
+    fromRgb.r + (toRgb.r - fromRgb.r) * ratio,
+    fromRgb.g + (toRgb.g - fromRgb.g) * ratio,
+    fromRgb.b + (toRgb.b - fromRgb.b) * ratio,
+  )
+}
+
+function rgba(hex: string, alpha: number) {
+  const { r, g, b } = hexToRgb(hex)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+function buildSkyStyle(color: string) {
+  const base = /^#[0-9a-fA-F]{6}$/.test(color) ? color : DEFAULT_SKY_COLOR
+  const mid = mixHex(base, '#d7f0ff', 0.28)
+  const low = mixHex(base, '#eef9ff', 0.6)
+  const bottom = mixHex(base, '#ffffff', 0.86)
+  const sunBase = mixHex(base, '#fff4bf', 0.7)
+  const haze = mixHex(base, '#ffffff', 0.82)
+
+  return {
+    '--sky-top': mixHex(base, '#3e86d9', 0.18),
+    '--sky-mid': mid,
+    '--sky-low': low,
+    '--sky-bottom': bottom,
+    '--sky-sun': rgba(sunBase, 0.92),
+    '--sky-sun-glow': rgba(sunBase, 0.34),
+    '--sky-haze': rgba(haze, 0.24),
+  } as React.CSSProperties
+}
+
 function priceStars(price: number | undefined) {
   if (!price) return null
   const count = price < 10000 ? 1 : price < 30000 ? 2 : price < 60000 ? 3 : price < 100000 ? 4 : 5
@@ -73,6 +129,42 @@ function lsSet(key: string, value: string) {
   if (typeof window !== 'undefined') localStorage.setItem(key, value)
 }
 
+function PaginationControls({ page, totalPages, onPageChange }: {
+  page: number
+  totalPages: number
+  onPageChange: (page: number) => void
+}) {
+  if (totalPages <= 1) return null
+
+  return (
+    <div className="flex justify-center items-center gap-1 mt-8">
+      <button onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page === 1}
+        className="px-3 py-1.5 rounded-lg bg-gray-800 text-gray-300 text-sm hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed">
+        ‹
+      </button>
+      {Array.from({ length: totalPages }, (_, i) => i + 1)
+        .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
+        .reduce<(number | '...')[]>((acc, p, idx, arr) => {
+          if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push('...')
+          acc.push(p)
+          return acc
+        }, [])
+        .map((p, i) => p === '...'
+          ? <span key={`e${i}`} className="px-2 text-gray-500">…</span>
+          : <button key={p} onClick={() => onPageChange(p as number)}
+              className={`px-3 py-1.5 rounded-lg text-sm min-w-[36px] transition-colors ${page === p ? 'bg-pink-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}>
+              {p}
+            </button>
+        )
+      }
+      <button onClick={() => onPageChange(Math.min(totalPages, page + 1))} disabled={page === totalPages}
+        className="px-3 py-1.5 rounded-lg bg-gray-800 text-gray-300 text-sm hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed">
+        ›
+      </button>
+    </div>
+  )
+}
+
 function useAutoPlay(goRight: () => void, interval: number, playing: boolean) {
   useEffect(() => {
     if (!playing) return
@@ -90,12 +182,17 @@ function CarouselView({ photocards, getTitle, getPrice }: {
 }) {
   const [index, setIndex] = useState(0)
   const [containerH, setContainerH] = useState(400)
-  const [playing, setPlaying] = useState(() => lsGet('pc_playing') === '1')
+  const [playing, setPlaying] = useState(false)
   const togglePlay = () => setPlaying(p => { const next = !p; lsSet('pc_playing', next ? '1' : '0'); return next })
-  const [timerSec, setTimerSec] = useState(() => Number(lsGet('pc_timer') || '3'))
+  const [timerSec, setTimerSec] = useState(3)
   const setTimer = (s: number) => { setTimerSec(s); lsSet('pc_timer', String(s)) }
   const containerRef = useRef<HTMLDivElement>(null)
   const n = photocards.length
+
+  useEffect(() => {
+    setPlaying(lsGet('pc_playing') === '1')
+    setTimerSec(Number(lsGet('pc_timer') || '3'))
+  }, [])
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -130,11 +227,11 @@ function CarouselView({ photocards, getTitle, getPrice }: {
 
   if (n === 0) return null
 
-  const stripX = `calc(50vw - ${index * STEP + CARD_W / 2}px)`
+  const stripX = `translateX(-${index * STEP + CARD_W / 2}px)`
 
   return (
-    <div className="flex flex-col items-center select-none h-full">
-      <div ref={containerRef} className="relative w-full overflow-hidden flex-1" style={{ minHeight: 380, perspective: 900 }} {...swipe}>
+    <div className="flex flex-col items-center select-none h-full w-full">
+      <div ref={containerRef} className="relative w-full overflow-hidden flex-1" style={{ minHeight: 0, perspective: 900 }} {...swipe}>
         <button onClick={goLeft}
           className="absolute left-2 z-20 text-white text-4xl hover:text-pink-400 transition-colors p-2"
           style={{ top: '50%', transform: 'translateY(-50%)' }}>‹</button>
@@ -142,8 +239,8 @@ function CarouselView({ photocards, getTitle, getPrice }: {
         {/* moving strip — translateX drives the slide animation */}
         <div style={{
           display: 'flex', gap: GAP, alignItems: 'center',
-          position: 'absolute', top: 0, bottom: 0, left: 0,
-          transform: `translateX(${stripX})`,
+          position: 'absolute', top: 0, bottom: 0, left: '50%',
+          transform: stripX,
           transition: 'transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94)',
         }}>
           {photocards.map((card, i) => {
@@ -229,12 +326,17 @@ function FlatCarouselView({ photocards, getTitle, getPrice }: {
 }) {
   const [index, setIndex] = useState(0)
   const [containerH, setContainerH] = useState(400)
-  const [playing, setPlaying] = useState(() => lsGet('pc_playing') === '1')
+  const [playing, setPlaying] = useState(false)
   const togglePlay = () => setPlaying(p => { const next = !p; lsSet('pc_playing', next ? '1' : '0'); return next })
-  const [timerSec, setTimerSec] = useState(() => Number(lsGet('pc_timer') || '3'))
+  const [timerSec, setTimerSec] = useState(3)
   const setTimer = (s: number) => { setTimerSec(s); lsSet('pc_timer', String(s)) }
   const containerRef = useRef<HTMLDivElement>(null)
   const n = photocards.length
+
+  useEffect(() => {
+    setPlaying(lsGet('pc_playing') === '1')
+    setTimerSec(Number(lsGet('pc_timer') || '3'))
+  }, [])
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -269,11 +371,11 @@ function FlatCarouselView({ photocards, getTitle, getPrice }: {
 
   if (n === 0) return null
 
-  const stripX = `calc(50vw - ${index * STEP + CARD_W / 2}px)`
+  const stripX = `translateX(-${index * STEP + CARD_W / 2}px)`
 
   return (
-    <div className="flex flex-col items-center select-none h-full">
-      <div ref={containerRef} className="relative w-full overflow-hidden flex-1" style={{ minHeight: 300 }} {...swipe}>
+    <div className="flex flex-col items-center select-none h-full w-full">
+      <div ref={containerRef} className="relative w-full overflow-hidden flex-1" style={{ minHeight: 0 }} {...swipe}>
         <button onClick={goLeft}
           className="absolute left-2 z-20 text-white text-4xl hover:text-pink-400 transition-colors p-2"
           style={{ top: '50%', transform: 'translateY(-50%)' }}>‹</button>
@@ -281,8 +383,8 @@ function FlatCarouselView({ photocards, getTitle, getPrice }: {
         {/* moving strip */}
         <div style={{
           display: 'flex', gap: GAP, alignItems: 'center',
-          position: 'absolute', top: 0, bottom: 0, left: 0,
-          transform: `translateX(${stripX})`,
+          position: 'absolute', top: 0, bottom: 0, left: '50%',
+          transform: stripX,
           transition: 'transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94)',
         }}>
           {photocards.map((card, i) => {
@@ -417,8 +519,14 @@ export default function PhotocardGallery() {
   const [shuffledPhotocards, setShuffledPhotocards] = useState<Photocard[]>([])
   const [isShuffled, setIsShuffled] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [viewMode, setViewMode] = useState<ViewMode>(() => (lsGet('pc_view') as ViewMode) || 'grid')
+  const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const setView = (m: ViewMode) => { setViewMode(m); lsSet('pc_view', m) }
+  const [skyColor, setSkyColor] = useState(DEFAULT_SKY_COLOR)
+  const setSkyColorTheme = (color: string) => {
+    setSkyColor(color)
+    lsSet('pc_sky_color', color)
+  }
+  const shouldRestoreShuffle = useRef(false)
 
   const [selectedGroupId, setSelectedGroupId] = useState('')
   const [selectedGroupName, setSelectedGroupName] = useState('')
@@ -438,6 +546,14 @@ export default function PhotocardGallery() {
       console.log('groups sample:', list[0])
       setGroups(list)
     }).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const storedView = lsGet('pc_view') as ViewMode | null
+    const storedColor = lsGet('pc_sky_color')
+    if (storedView) setViewMode(storedView)
+    if (storedColor && /^#[0-9a-fA-F]{6}$/.test(storedColor)) setSkyColor(storedColor)
+    shouldRestoreShuffle.current = lsGet('pc_shuffle') === '1'
   }, [])
 
   useEffect(() => {
@@ -469,10 +585,17 @@ export default function PhotocardGallery() {
   // reset page and fetch on filter change
   useEffect(() => { setPage(1); fetchPhotocards(1) }, [selectedGroupId, selectedSinger])
 
+  useEffect(() => {
+    if (selectedGroupId) return
+    setIsShuffled(false)
+    setShuffledPhotocards([])
+    lsSet('pc_shuffle', '0')
+  }, [selectedGroupId])
+
   // auto-shuffle on initial load if preference was stored
   const initShuffleDone = useRef(false)
   useEffect(() => {
-    if (initShuffleDone.current || total === 0 || lsGet('pc_shuffle') !== '1') return
+    if (initShuffleDone.current || total === 0 || !shouldRestoreShuffle.current) return
     initShuffleDone.current = true
     toggleShuffle()
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -497,6 +620,7 @@ export default function PhotocardGallery() {
   const toggleShuffle = async () => {
     if (isShuffled) {
       setIsShuffled(false)
+      setShuffledPhotocards([])
       lsSet('pc_shuffle', '0')
       return
     }
@@ -576,15 +700,22 @@ export default function PhotocardGallery() {
   ]
 
   return (
-    <div className={`bg-gray-950 text-white ${viewMode === 'carousel' || viewMode === 'flat' ? 'h-screen flex flex-col overflow-hidden' : 'min-h-screen'}`}>
+    <div style={buildSkyStyle(skyColor)} className={`sky-stage text-slate-950 w-full ${viewMode === 'carousel' || viewMode === 'flat' ? 'h-dvh flex flex-col overflow-hidden' : 'min-h-dvh'}`}>
+      <div className="sky-backdrop" aria-hidden="true">
+        <div className="sky-glow" />
+        <div className="sky-cloud sky-cloud-a" />
+        <div className="sky-cloud sky-cloud-b" />
+        <div className="sky-cloud sky-cloud-c" />
+      </div>
+
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800 px-4 py-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-center mb-4 text-pink-400">K-POP Photocard Shop</h1>
+      <div className="relative z-10 border-b border-sky-200/60 bg-white/30 px-4 py-4 backdrop-blur-md flex-shrink-0 shadow-[0_10px_30px_rgba(116,180,255,0.18)]">
+        <h1 className="text-2xl font-bold text-center mb-4 text-sky-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.45)]">K-POP Photocard Shop</h1>
 
         <form onSubmit={e => { e.preventDefault(); setPage(1); fetchPhotocards(1) }}
           className="max-w-3xl mx-auto flex flex-wrap gap-2">
           <select value={selectedGroupId} onChange={handleGroupChange}
-            className="flex-1 min-w-[140px] bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-pink-500">
+            className="flex-1 min-w-[140px] rounded-lg border border-white/60 bg-white/75 px-3 py-2 text-sm text-slate-900 shadow-sm focus:outline-none focus:border-sky-500">
             <option value="">전체 그룹</option>
             {groups.map((g, i) => {
               const gid = g.group_id ?? g.id ?? i
@@ -595,7 +726,7 @@ export default function PhotocardGallery() {
 
           {selectedGroupId && (
             <select value={selectedSinger} onChange={e => setSelectedSinger(e.target.value)}
-              className="flex-1 min-w-[140px] bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-pink-500">
+              className="flex-1 min-w-[140px] rounded-lg border border-white/60 bg-white/75 px-3 py-2 text-sm text-slate-900 shadow-sm focus:outline-none focus:border-sky-500">
               <option value="">전체 멤버</option>
               {singers.map((s, i) => {
                 const sid = s.singer_id ?? s.id ?? i
@@ -607,10 +738,21 @@ export default function PhotocardGallery() {
 
           <input type="text" value={titleSearch} onChange={e => setTitleSearch(e.target.value)}
             placeholder="제목 검색..."
-            className="flex-1 min-w-[160px] bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-pink-500" />
+            className="flex-1 min-w-[160px] rounded-lg border border-white/60 bg-white/75 px-3 py-2 text-sm text-slate-900 shadow-sm placeholder:text-slate-500 focus:outline-none focus:border-sky-500" />
+
+          <label className="flex items-center gap-2 rounded-lg border border-white/60 bg-white/75 px-3 py-2 text-sm text-slate-900 shadow-sm">
+            <span>배경색</span>
+            <input
+              type="color"
+              value={skyColor}
+              onChange={e => setSkyColorTheme(e.target.value)}
+              className="h-8 w-10 cursor-pointer rounded border-0 bg-transparent p-0"
+              aria-label="배경색 선택"
+            />
+          </label>
 
           <button type="submit"
-            className="bg-pink-600 hover:bg-pink-500 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
+            className="rounded-lg bg-sky-600 px-5 py-2 text-sm font-medium text-white shadow-[0_10px_24px_rgba(37,99,235,0.28)] transition-colors hover:bg-sky-500">
             검색
           </button>
         </form>
@@ -618,7 +760,7 @@ export default function PhotocardGallery() {
 
       {/* Gallery */}
       <div className={viewMode === 'carousel' || viewMode === 'flat'
-        ? 'flex flex-col w-full flex-1 overflow-hidden' : 'max-w-6xl mx-auto px-4 py-6'}>
+        ? 'relative z-10 flex w-full min-h-0 flex-1 flex-col overflow-hidden' : 'relative z-10 mx-auto w-full max-w-6xl px-4 py-6'}>
         {loading ? (
           <div className="flex justify-center items-center h-48 text-gray-400">불러오는 중...</div>
         ) : displayed.length === 0 ? (
@@ -626,29 +768,35 @@ export default function PhotocardGallery() {
         ) : (
           <>
             {/* Toolbar */}
-            <div className={`flex items-center justify-between ${viewMode === 'carousel' || viewMode === 'flat' ? 'px-4 py-3 bg-gray-900 border-b border-gray-800' : 'mb-4'}`}>
-              <p className="text-gray-400 text-sm">
+            <div className={`flex items-center justify-between ${viewMode === 'carousel' || viewMode === 'flat' ? 'border-b border-sky-200/60 bg-white/25 px-4 py-3 backdrop-blur-md' : 'mb-4 rounded-2xl border border-white/50 bg-white/35 px-4 py-3 backdrop-blur-md shadow-[0_14px_34px_rgba(97,167,255,0.16)]'}`}>
+              <p className="text-sm text-slate-700">
                 총 {total}장 · {page}/{totalPages} 페이지
               </p>
               <div className="flex items-center gap-2">
-              <button onClick={toggleShuffle} disabled={!selectedGroupId} title={!selectedGroupId ? '그룹을 선택해야 셔플 가능' : isShuffled ? '원래 순서' : '랜덤 셔플'}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm transition-colors ${!selectedGroupId ? 'opacity-30 cursor-not-allowed bg-gray-800 text-gray-600' : isShuffled ? 'bg-pink-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
+              <button onClick={toggleShuffle} disabled={!selectedGroupId} title={!selectedGroupId ? '전체 그룹에서는 셔플을 사용할 수 없음' : isShuffled ? '원래 순서' : '랜덤 셔플'}
+                className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm transition-colors ${!selectedGroupId ? 'cursor-not-allowed bg-white/40 text-slate-400 opacity-40' : isShuffled ? 'bg-sky-600 text-white shadow-[0_10px_24px_rgba(37,99,235,0.24)]' : 'bg-white/70 text-slate-700 hover:bg-white hover:text-slate-950'}`}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                   <path d="M10.5 3.5l1.5 1.5-1.5 1.5M5.5 3.5H4a2 2 0 00-2 2v1M10.5 12.5l1.5-1.5-1.5-1.5M5.5 12.5H4a2 2 0 01-2-2v-1M13 5l-1.5 1.5L13 8M13 8l-1.5 1.5L13 11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none"/>
                   <path d="M12 5h-2a2 2 0 00-2 2v2a2 2 0 00 2 2h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none"/>
                 </svg>
                 {isShuffled ? '셔플 중' : '셔플'}
               </button>
-              <div className="flex gap-1 bg-gray-800 rounded-lg p-1">
+              <div className="flex gap-1 rounded-lg bg-white/65 p-1 shadow-sm">
                 {viewButtons.map(({ mode, title, icon }) => (
                   <button key={mode} onClick={() => setView(mode)} title={title}
-                    className={`p-1.5 rounded-md transition-colors ${viewMode === mode ? 'bg-pink-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+                    className={`rounded-md p-1.5 transition-colors ${viewMode === mode ? 'bg-sky-600 text-white' : 'text-slate-500 hover:text-slate-900'}`}>
                     {icon}
                   </button>
                 ))}
               </div>
               </div>
             </div>
+
+            {!isShuffled && viewMode !== 'grid' && (
+              <div className="px-4 pb-4">
+                <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
+              </div>
+            )}
 
             {viewMode === 'grid' && (
               <>
@@ -669,31 +817,7 @@ export default function PhotocardGallery() {
                 </div>
                 {/* Pagination */}
                 {!isShuffled && totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-1 mt-8">
-                    <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                      className="px-3 py-1.5 rounded-lg bg-gray-800 text-gray-300 text-sm hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed">
-                      ‹
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1)
-                      .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
-                      .reduce<(number | '...')[]>((acc, p, idx, arr) => {
-                        if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push('...')
-                        acc.push(p)
-                        return acc
-                      }, [])
-                      .map((p, i) => p === '...'
-                        ? <span key={`e${i}`} className="px-2 text-gray-500">…</span>
-                        : <button key={p} onClick={() => setPage(p as number)}
-                            className={`px-3 py-1.5 rounded-lg text-sm min-w-[36px] transition-colors ${page === p ? 'bg-pink-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}>
-                            {p}
-                          </button>
-                      )
-                    }
-                    <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                      className="px-3 py-1.5 rounded-lg bg-gray-800 text-gray-300 text-sm hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed">
-                      ›
-                    </button>
-                  </div>
+                  <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
                 )}
               </>
             )}
