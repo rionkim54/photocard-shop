@@ -8,7 +8,7 @@ import sharp from 'sharp'
  */
 export async function applyWatermark(
   imageBuffer: ArrayBuffer,
-  text: string = '© KPOP STORE',
+  text: string = '© K-STORM',
   opacity: number = 0.3
 ): Promise<Buffer> {
   const buffer = Buffer.from(imageBuffer)
