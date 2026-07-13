@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { apiFetch } from '@/lib/api-fetch'
 
 const API_URL = process.env.PHOTOCARD_API_URL
 
@@ -8,7 +9,7 @@ export async function GET() {
     return NextResponse.json({ error: 'PHOTOCARD_API_URL not configured' }, { status: 500 })
   }
   try {
-    const res = await fetch(`${API_URL}/api/v1/lists/groups`, { cache: 'no-store' })
+    const res = await apiFetch(`${API_URL}/api/v1/lists/groups`, { cache: 'no-store' })
 
     if (!res.ok) throw new Error(`Upstream ${res.status}`)
 

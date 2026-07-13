@@ -216,7 +216,7 @@ function CardDetailModal({ card, onClose, onPrev, onNext, current, total }: {
 
             <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-gray-50 p-3 sm:p-4 sm:w-[140px]">
               <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=0&data=${encodeURIComponent(`https://zerowin.tplinkdns.com/photocard.html?id=${card.photocard_id ?? card.seller_photocard_id}`)}`}
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=0&data=${encodeURIComponent(`http://zerowin.tplinkdns.com/photocard.html?id=${card.photocard_id ?? card.seller_photocard_id}`)}`}
                 alt={`QR 코드 - 포토카드 ${card.photocard_id ?? card.seller_photocard_id}`}
                 width={110}
                 height={110}

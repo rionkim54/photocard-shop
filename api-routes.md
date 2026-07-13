@@ -27,7 +27,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://lzertmwmhkopgnnvxvey.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 
 # 기존 서버 (서버사이드에서만 사용 - NEXT_PUBLIC 붙이지 않음!)
-PHOTOCARD_API_URL=https://zerowin.tplinkdns.com
+PHOTOCARD_API_URL=http://zerowin.tplinkdns.com
 ```
 
 ---

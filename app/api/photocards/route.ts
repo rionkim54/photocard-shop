@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { apiFetch } from '@/lib/api-fetch'
 
 const API_URL = process.env.PHOTOCARD_API_URL
 
@@ -40,7 +41,7 @@ async function fetchWithRetry(url: string, retries: number): Promise<Response> {
   let lastErr: unknown
   for (let i = 0; i <= retries; i++) {
     try {
-      const res = await fetch(url, { next: { revalidate: 60 } })
+      const res = await apiFetch(url, { next: { revalidate: 60 } } as RequestInit)
       if (res.ok) return res
       // non-retryable client errors
       if (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429) return res

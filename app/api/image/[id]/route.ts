@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { applyWatermark } from '@/lib/watermark'
+import { apiFetch } from '@/lib/api-fetch'
 
 const API_URL = process.env.PHOTOCARD_API_URL
 const WATERMARK_TEXT = process.env.WATERMARK_TEXT || '© KPOP STORE'
@@ -12,7 +13,7 @@ export async function GET(
 
   try {
     // seller_photocard_id로 직접 필터
-    const res = await fetch(
+    const res = await apiFetch(
       `${API_URL}/api/mobile/seller_photocards?seller_photocard_id=${id}&page=1&limit=1`
     )
     if (!res.ok) throw new Error('Not found')

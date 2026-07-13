@@ -7,14 +7,14 @@ import { imgSrc } from '../../lib/imgSrc'
 const STORAGE_KEY = 'kstorm_set_maxident_whitea'
 
 const MEMBERS = [
-  { name: 'BANG CHAN', id: 351528, imageUrl: 'https://zerowin.tplinkdns.com/uploads/image-1762504182979.jpg' },
-  { name: 'LEE KNOW', id: 358723, imageUrl: 'https://zerowin.tplinkdns.com/uploads/image-1773564482112.jpg' },
-  { name: 'CHANGBIN', id: 351298, imageUrl: 'https://zerowin.tplinkdns.com/uploads/image-1762153297446.jpg' },
-  { name: 'HYUNJIN', id: 351129, imageUrl: 'https://zerowin.tplinkdns.com/uploads/image-1761996716798.jpg' },
-  { name: 'HAN', id: 351545, imageUrl: 'https://zerowin.tplinkdns.com/uploads/image-1762507919896.jpg' },
-  { name: 'FELIX', id: 353064, imageUrl: 'https://zerowin.tplinkdns.com/uploads/image-1765282025619.jpg' },
-  { name: 'SEUNGMIN', id: 352989, imageUrl: 'https://zerowin.tplinkdns.com/uploads/image-1765269115467.jpg' },
-  { name: 'I.N', id: 353188, imageUrl: 'https://zerowin.tplinkdns.com/uploads/image-1765364459075.jpg' },
+  { name: 'BANG CHAN', id: 351528, imageUrl: 'http://zerowin.tplinkdns.com/uploads/image-1762504182979.jpg' },
+  { name: 'LEE KNOW', id: 358723, imageUrl: 'http://zerowin.tplinkdns.com/uploads/image-1773564482112.jpg' },
+  { name: 'CHANGBIN', id: 351298, imageUrl: 'http://zerowin.tplinkdns.com/uploads/image-1762153297446.jpg' },
+  { name: 'HYUNJIN', id: 351129, imageUrl: 'http://zerowin.tplinkdns.com/uploads/image-1761996716798.jpg' },
+  { name: 'HAN', id: 351545, imageUrl: 'http://zerowin.tplinkdns.com/uploads/image-1762507919896.jpg' },
+  { name: 'FELIX', id: 353064, imageUrl: 'http://zerowin.tplinkdns.com/uploads/image-1765282025619.jpg' },
+  { name: 'SEUNGMIN', id: 352989, imageUrl: 'http://zerowin.tplinkdns.com/uploads/image-1765269115467.jpg' },
+  { name: 'I.N', id: 353188, imageUrl: 'http://zerowin.tplinkdns.com/uploads/image-1765364459075.jpg' },
 ]
 
 export default function MaxidentWhiteAPage() {

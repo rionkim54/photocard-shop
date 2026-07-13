@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { apiFetch } from '@/lib/api-fetch'
 
 const API_URL = process.env.PHOTOCARD_API_URL
 
@@ -10,9 +11,9 @@ export async function GET(request: NextRequest) {
   if (group_id) params.set('group_id', group_id)
 
   try {
-    const res = await fetch(
+    const res = await apiFetch(
       `${API_URL}/api/v1/lists/singers?${params.toString()}`,
-      { next: { revalidate: 3600 } }
+      { next: { revalidate: 3600 } } as RequestInit
     )
 
     if (!res.ok) throw new Error('Failed to fetch singers')

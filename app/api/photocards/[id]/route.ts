@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { apiFetch } from '@/lib/api-fetch'
 
 const API_URL = process.env.PHOTOCARD_API_URL
 
@@ -9,9 +10,9 @@ export async function GET(
   const { id } = await params
 
   try {
-    const res = await fetch(
+    const res = await apiFetch(
       `${API_URL}/api/mobile/seller_photocards?search=${id}&page=1&limit=1`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 60 } } as RequestInit
     )
 
     if (!res.ok) throw new Error('Not found')
