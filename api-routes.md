@@ -27,7 +27,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://lzertmwmhkopgnnvxvey.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 
 # 기존 서버 (서버사이드에서만 사용 - NEXT_PUBLIC 붙이지 않음!)
-PHOTOCARD_API_URL=https://kpop.zerowin.kr
+PHOTOCARD_API_URL=https://zerowin.tplinkdns.com
 ```
 
 ---
@@ -239,7 +239,7 @@ curl http://localhost:3000/api/singers?group_id=2
 ## 🔒 보안 확인
 
 브라우저 개발자 도구(Network 탭)에서 요청을 봐도:
-- `kpop.zerowin.kr` 주소가 **절대 노출되지 않음** ✅
+- `zerowin.tplinkdns.com` 주소가 **절대 노출되지 않음** ✅
 - 모든 요청이 `localhost:3000/api/...` 로만 보임 ✅
 
 ---

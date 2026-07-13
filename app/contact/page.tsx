@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useLang, type Translations } from '../lib/i18n'
 
 type Status = 'idle' | 'submitting' | 'success' | 'error'
-type InquiryType = 'oem' | 'wholesale' | 'general' | 'other'
+type InquiryType = 'investment' | 'oem' | 'wholesale' | 'general' | 'other'
 
 const COUNTRIES = [
   { code: 'KR', ko: '대한민국', en: 'Korea, Republic of', zh: '韩国', ja: '韓国' },
@@ -45,6 +45,24 @@ const TYPE_OPTIONS: {
   desc: Translations
   icon: React.ReactNode
 }[] = [
+  {
+    id: 'investment',
+    label: { ko: '투자 제안', en: 'Investment', zh: '投资提案', ja: '投資提案' },
+    desc: {
+      ko: '투자 · 파트너십 · 지분 참여',
+      en: 'Investment & partnership inquiry',
+      zh: '投资、合伙及股权参与',
+      ja: '投資・パートナーシップ・出資',
+    },
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M3 14l4-4 3 2.5 4-5.5 3-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M15 5h2v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="3" y="3" width="4" height="3" rx="0.5" fill="currentColor" opacity="0.3" />
+        <rect x="3" y="3" width="4" height="3" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
+      </svg>
+    ),
+  },
   {
     id: 'oem',
     label: { ko: 'OEM 판매', en: 'OEM Sales', zh: 'OEM 销售', ja: 'OEM販売' },

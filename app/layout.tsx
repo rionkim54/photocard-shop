@@ -3,6 +3,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "./lib/cart";
 import { LanguageProvider } from "./lib/i18n";
+import { CollectionProvider } from "./lib/collection";
 import MarqueeBanner from "./components/MarqueeBanner";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -34,14 +35,16 @@ export default function RootLayout({
         className={`${inter.variable} ${playfair.variable} font-sans antialiased`}
       >
         <LanguageProvider>
-          <CartProvider>
-            <div className="min-h-screen flex flex-col bg-white">
-              <MarqueeBanner />
-              <Header />
-              <main className="flex-1">{children}</main>
-              <Footer />
-            </div>
-          </CartProvider>
+          <CollectionProvider>
+            <CartProvider>
+              <div className="min-h-screen flex flex-col bg-white">
+                <MarqueeBanner />
+                <Header />
+                <main className="flex-1">{children}</main>
+                <Footer />
+              </div>
+            </CartProvider>
+          </CollectionProvider>
         </LanguageProvider>
       </body>
     </html>

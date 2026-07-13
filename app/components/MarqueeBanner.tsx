@@ -15,7 +15,7 @@ const items = [
 
 export default function MarqueeBanner() {
   return (
-    <div className="bg-gradient-to-r from-sky-600 via-pink-500 to-sky-600 text-white py-2 overflow-hidden">
+    <div className="bg-black text-white py-2 overflow-hidden">
       <div className="animate-marquee whitespace-nowrap flex">
         {[...items, ...items].map((item, i) => (
           <span
